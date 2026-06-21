@@ -1,0 +1,2081 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Escritório Virtual — Documentação de Arquitetura</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0d1117;
+      --surface:   #161b22;
+      --surface2:  #1c2332;
+      --border:    #30363d;
+      --primary:   #6366f1;
+      --primary-d: #4f52c9;
+      --success:   #22c55e;
+      --danger:    #ef4444;
+      --warning:   #f59e0b;
+      --info:      #38bdf8;
+      --text:      #e6edf3;
+      --muted:     #8b949e;
+      --code-bg:   #161b22;
+      --sidebar-w: 270px;
+      --font-mono: 'Fira Code', 'Cascadia Code', monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 15px;
+      line-height: 1.7;
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+    /* ════════════════════════════════════
+       SIDEBAR
+    ════════════════════════════════════ */
+    .sidebar {
+      width: var(--sidebar-w);
+      min-height: 100vh;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0;
+      overflow-y: auto;
+      z-index: 100;
+    }
+
+    .sidebar-brand {
+      padding: 24px 20px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .brand-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(135deg, var(--primary), #818cf8);
+      border-radius: 10px;
+      padding: 6px 12px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      color: #fff;
+      margin-bottom: 10px;
+    }
+
+    .sidebar-brand h1 {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.3;
+    }
+
+    .sidebar-brand p {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+
+    .sidebar-nav { padding: 16px 12px; flex: 1; }
+
+    .nav-section-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 0 8px;
+      margin: 16px 0 6px;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all .15s;
+      cursor: pointer;
+    }
+
+    .nav-link:hover { background: var(--surface2); color: var(--text); }
+    .nav-link.active { background: rgba(99,102,241,.15); color: var(--primary); }
+
+    .nav-link .icon {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+      opacity: .7;
+    }
+
+    .nav-link.active .icon { opacity: 1; }
+
+    .sidebar-footer {
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .version-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2px 10px;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    /* ════════════════════════════════════
+       MAIN CONTENT
+    ════════════════════════════════════ */
+    .main {
+      margin-left: var(--sidebar-w);
+      flex: 1;
+      max-width: calc(100vw - var(--sidebar-w));
+    }
+
+    /* ── Hero ── */
+    .hero {
+      background: linear-gradient(135deg, #0d1117 0%, #161b22 40%, #1a1f2e 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 64px 60px 56px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -80px; right: -80px;
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(99,102,241,.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: -40px; left: 40%;
+      width: 300px; height: 300px;
+      background: radial-gradient(circle, rgba(34,197,94,.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .03em;
+    }
+
+    .badge-primary { background: rgba(99,102,241,.15); color: #818cf8; border: 1px solid rgba(99,102,241,.3); }
+    .badge-success { background: rgba(34,197,94,.12); color: #4ade80; border: 1px solid rgba(34,197,94,.25); }
+    .badge-warning { background: rgba(245,158,11,.12); color: #fbbf24; border: 1px solid rgba(245,158,11,.25); }
+    .badge-danger  { background: rgba(239,68,68,.12); color: #f87171; border: 1px solid rgba(239,68,68,.25); }
+    .badge-info    { background: rgba(56,189,248,.12); color: #7dd3fc; border: 1px solid rgba(56,189,248,.25); }
+    .badge-muted   { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+
+    .hero h1 {
+      font-size: 40px;
+      font-weight: 800;
+      line-height: 1.15;
+      background: linear-gradient(135deg, #e6edf3 0%, #818cf8 60%, #6366f1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 14px;
+      letter-spacing: -.02em;
+    }
+
+    .hero p {
+      font-size: 16px;
+      color: var(--muted);
+      max-width: 560px;
+      line-height: 1.6;
+      margin-bottom: 28px;
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    /* ── Content Area ── */
+    .content { padding: 40px 60px 80px; }
+
+    /* ── Section ── */
+    .section {
+      margin-bottom: 60px;
+      scroll-margin-top: 24px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 28px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .section-number {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--primary), #818cf8);
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 800;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .section h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .section h3 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+      margin: 28px 0 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section h3::before {
+      content: '';
+      width: 3px;
+      height: 16px;
+      background: var(--primary);
+      border-radius: 2px;
+      display: inline-block;
+    }
+
+    .section p { color: var(--muted); margin-bottom: 14px; }
+    .section p strong { color: var(--text); }
+
+    /* ── Cards Grid ── */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 14px;
+      margin: 20px 0;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      transition: border-color .15s;
+    }
+
+    .card:hover { border-color: var(--primary); }
+
+    .card-icon {
+      font-size: 22px;
+      margin-bottom: 10px;
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 5px;
+    }
+
+    .card-desc {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    /* ── Feature Grid ── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 16px;
+      margin: 20px 0;
+    }
+
+    .feature-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      gap: 14px;
+      transition: all .15s;
+    }
+
+    .feature-item:hover { border-color: var(--primary); transform: translateY(-2px); }
+
+    .feature-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .fi-purple { background: rgba(99,102,241,.15); }
+    .fi-green  { background: rgba(34,197,94,.12); }
+    .fi-blue   { background: rgba(56,189,248,.12); }
+    .fi-yellow { background: rgba(245,158,11,.12); }
+    .fi-red    { background: rgba(239,68,68,.12); }
+    .fi-pink   { background: rgba(236,72,153,.12); }
+
+    .feature-body { flex: 1; }
+    .feature-body h4 { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .feature-body p  { font-size: 12px; color: var(--muted); line-height: 1.5; margin: 0; }
+
+    /* ── Diagram Box ── */
+    .diagram-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      margin: 20px 0;
+    }
+
+    .diagram-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 18px;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .diagram-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+
+    .diagram-dots { display: flex; gap: 5px; }
+    .diagram-dots span { width: 10px; height: 10px; border-radius: 50%; }
+    .dot-red    { background: #ef4444; }
+    .dot-yellow { background: #f59e0b; }
+    .dot-green  { background: #22c55e; }
+
+    .diagram-body {
+      padding: 28px;
+      overflow-x: auto;
+    }
+
+    .diagram-body .mermaid {
+      display: flex;
+      justify-content: center;
+    }
+
+    /* ── Code Block ── */
+    .code-block {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 14px 0;
+      font-family: var(--font-mono);
+    }
+
+    .code-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 16px;
+      background: rgba(255,255,255,.03);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .code-lang {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+
+    .code-block pre {
+      padding: 18px;
+      font-size: 12.5px;
+      line-height: 1.7;
+      color: #e6edf3;
+      overflow-x: auto;
+      white-space: pre;
+    }
+
+    /* ── Table ── */
+    .table-wrap { overflow-x: auto; margin: 16px 0; border-radius: 10px; border: 1px solid var(--border); }
+
+    table { width: 100%; border-collapse: collapse; }
+
+    thead tr { background: var(--surface2); }
+
+    th {
+      padding: 10px 16px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--muted);
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 10px 16px;
+      font-size: 13px;
+      color: var(--text);
+      border-bottom: 1px solid rgba(48,54,61,.6);
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,.02); }
+
+    td code, th code {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: #818cf8;
+    }
+
+    /* ── Endpoint Tag ── */
+    .method {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .05em;
+      font-family: var(--font-mono);
+    }
+
+    .get    { background: rgba(34,197,94,.15);  color: #4ade80; }
+    .post   { background: rgba(99,102,241,.15); color: #818cf8; }
+    .put    { background: rgba(245,158,11,.15); color: #fbbf24; }
+    .delete { background: rgba(239,68,68,.15);  color: #f87171; }
+
+    /* ── Endpoint List ── */
+    .endpoint-list { display: flex; flex-direction: column; gap: 6px; margin: 16px 0; }
+
+    .endpoint-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      transition: border-color .15s;
+    }
+
+    .endpoint-item:hover { border-color: var(--primary); }
+
+    .endpoint-path {
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      color: var(--text);
+      flex: 1;
+    }
+
+    .endpoint-desc { font-size: 12px; color: var(--muted); }
+
+    /* ── Alert Box ── */
+    .alert {
+      display: flex;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 10px;
+      margin: 16px 0;
+      font-size: 13px;
+    }
+
+    .alert-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+    .alert-body { flex: 1; }
+    .alert-body strong { font-weight: 700; display: block; margin-bottom: 3px; }
+
+    .alert-info    { background: rgba(56,189,248,.08); border: 1px solid rgba(56,189,248,.2); color: #bae6fd; }
+    .alert-warning { background: rgba(245,158,11,.08); border: 1px solid rgba(245,158,11,.2); color: #fde68a; }
+    .alert-success { background: rgba(34,197,94,.08);  border: 1px solid rgba(34,197,94,.2);  color: #bbf7d0; }
+    .alert-danger  { background: rgba(239,68,68,.08);  border: 1px solid rgba(239,68,68,.2);  color: #fecaca; }
+
+    /* ── Score Display ── */
+    .score-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 12px;
+      margin: 16px 0;
+    }
+
+    .score-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .score-range {
+      font-size: 22px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .score-label {
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .score-bar {
+      height: 4px;
+      border-radius: 2px;
+      margin-top: 8px;
+    }
+
+    /* ── Tech Stack Visual ── */
+    .stack-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 20px 0;
+    }
+
+    .stack-group {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .stack-group-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--muted);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tech-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--text);
+      margin: 3px;
+    }
+
+    .tech-pill .dot { width: 6px; height: 6px; border-radius: 50%; }
+
+    /* ── Checklist ── */
+    .checklist { list-style: none; margin: 14px 0; }
+    .checklist li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 7px 0;
+      font-size: 13px;
+      color: var(--muted);
+      border-bottom: 1px solid rgba(48,54,61,.4);
+    }
+
+    .checklist li:last-child { border-bottom: none; }
+
+    .check-icon { flex-shrink: 0; margin-top: 1px; }
+
+    /* ── Layer Architecture ── */
+    .arch-visual {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      margin: 20px 0;
+    }
+
+    .arch-layer {
+      border-radius: 10px;
+      padding: 16px 22px;
+      border: 1px solid;
+      transition: transform .15s;
+    }
+
+    .arch-layer:hover { transform: translateX(4px); }
+
+    .arch-layer-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+    .arch-layer-desc  { font-size: 12px; opacity: .7; }
+
+    .arch-arrow {
+      text-align: center;
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .layer-fe     { background: rgba(99,102,241,.08); border-color: rgba(99,102,241,.3); color: #c7d2fe; }
+    .layer-api    { background: rgba(56,189,248,.08); border-color: rgba(56,189,248,.3); color: #bae6fd; }
+    .layer-db     { background: rgba(34,197,94,.08);  border-color: rgba(34,197,94,.3);  color: #bbf7d0; }
+
+    /* ── Sequence Visual ── */
+    .seq-visual {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      margin: 20px 0;
+    }
+
+    .seq-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    .seq-step-line {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .seq-dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+
+    .seq-connector {
+      width: 2px;
+      height: 32px;
+      background: var(--border);
+      margin: 0 auto;
+    }
+
+    .seq-content {
+      padding: 2px 0 28px;
+      flex: 1;
+    }
+
+    .seq-content h4 { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 4px; margin-top: 3px; }
+    .seq-content p  { font-size: 12px; color: var(--muted); margin: 0; line-height: 1.5; }
+
+    /* ── Divider ── */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 40px 0;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      .sidebar { display: none; }
+      .main { margin-left: 0; max-width: 100vw; }
+      .hero, .content { padding-left: 24px; padding-right: 24px; }
+      .stack-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ── Print ── */
+    @media print {
+      .sidebar { display: none; }
+      .main { margin-left: 0; }
+    }
+
+    /* ── Mermaid overrides ── */
+    .mermaid svg { max-width: 100%; height: auto; }
+
+    /* ── ERD Visual ── */
+    .erd-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 12px;
+      margin: 20px 0;
+    }
+
+    .erd-table {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .erd-table-header {
+      padding: 10px 14px;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .erd-field {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 14px;
+      font-size: 12px;
+      border-bottom: 1px solid rgba(48,54,61,.4);
+    }
+
+    .erd-field:last-child { border-bottom: none; }
+    .erd-field-name { color: var(--text); font-family: var(--font-mono); }
+    .erd-field-type { color: var(--muted); font-size: 11px; }
+
+    .pk { color: #fbbf24; }
+    .fk { color: #818cf8; }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════
+     SIDEBAR
+════════════════════════════════════ -->
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-badge">
+      <span>📊</span> Docs v1.0
+    </div>
+    <h1>Escritório Virtual<br>Financeiro</h1>
+    <p>Família Carvalho · Arquitetura</p>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Visão Geral</div>
+    <a class="nav-link active" onclick="scrollTo('visao-geral')">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Visão Geral
+    </a>
+    <a class="nav-link" onclick="scrollTo('funcionalidades')">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      Funcionalidades
+    </a>
+
+    <div class="nav-section-label">Arquitetura</div>
+    <a class="nav-link" onclick="scrollTo('camadas')">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+      Camadas
+    </a>
+    <a class="nav-link" onclick="scrollTo('banco-de-dados')">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+      Banco de Dados
+    </a>
+    <a class="nav-link" onclick="scrollTo('frontend')">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+      Frontend
+    </a>
+    <a class="nav-link" onclick="scrollTo('api')">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      API Endpoints
+    </a>
+
+    <div class="nav-section-label">Fluxos</div>
+    <a class="nav-link" onclick="scrollTo('autenticacao')">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      Autenticação
+    </a>
+    <a class="nav-link" onclick="scrollTo('transacao')">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      Transação CRUD
+    </a>
+    <a class="nav-link" onclick="scrollTo('radar')">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      Radar Financeiro
+    </a>
+    <a class="nav-link" onclick="scrollTo('ia')">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      Assistente IA
+    </a>
+
+    <div class="nav-section-label">Infra</div>
+    <a class="nav-link" onclick="scrollTo('stack')">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      Stack Tecnológico
+    </a>
+    <a class="nav-link" onclick="scrollTo('implantacao')">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      Implantação
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="version-pill">v1.0.0 · FastAPI + Next.js</div><br>
+    Gerado em 21/06/2026
+  </div>
+</aside>
+
+<!-- ════════════════════════════════════
+     MAIN
+════════════════════════════════════ -->
+<main class="main">
+
+  <!-- ── Hero ── -->
+  <div class="hero">
+    <div class="hero-eyebrow">
+      <span class="badge badge-primary">📐 Arquitetura</span>
+      <span class="badge badge-muted">Full-Stack</span>
+      <span class="badge badge-success">v1.0.0</span>
+    </div>
+    <h1>Escritório Virtual<br>Financeiro</h1>
+    <p>Documentação técnica completa do sistema de gestão financeira da Família Carvalho — arquitetura, fluxos, endpoints e diagramas.</p>
+    <div class="hero-meta">
+      <span class="badge badge-primary">Next.js 14</span>
+      <span class="badge badge-info">FastAPI</span>
+      <span class="badge badge-success">SQLAlchemy</span>
+      <span class="badge badge-warning">JWT Auth</span>
+      <span class="badge badge-muted">SQLite → PostgreSQL</span>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ════════════════════════════════════
+         1. VISÃO GERAL
+    ════════════════════════════════════ -->
+    <section class="section" id="visao-geral">
+      <div class="section-header">
+        <div class="section-number">1</div>
+        <h2>Visão Geral do Sistema</h2>
+      </div>
+
+      <p>O sistema é composto por dois processos independentes que se comunicam via <strong>HTTP/REST com autenticação JWT</strong>. O frontend (Next.js) roda na porta <strong>3000</strong> e o backend (FastAPI) na porta <strong>8000</strong>.</p>
+
+      <div class="arch-visual">
+        <div class="arch-layer layer-fe">
+          <div class="arch-layer-title">🖥️ Frontend — Next.js 14 · React 18 · TypeScript · Tailwind CSS</div>
+          <div class="arch-layer-desc">Páginas, componentes, gráficos (Recharts), formulários (Zod + react-hook-form), SWR para cache de dados · localhost:3000</div>
+        </div>
+        <div class="arch-arrow">↕ HTTP / REST + Bearer JWT</div>
+        <div class="arch-layer layer-api">
+          <div class="arch-layer-title">⚙️ Backend — FastAPI · Pydantic v2 · SQLAlchemy 2 · JWT + bcrypt</div>
+          <div class="arch-layer-desc">9 routers · autenticação · validação · ORM · cálculos financeiros · IA por pattern matching · localhost:8000</div>
+        </div>
+        <div class="arch-arrow">↕ SQL (ORM)</div>
+        <div class="arch-layer layer-db">
+          <div class="arch-layer-title">🗄️ Banco de Dados — SQLite (dev) → PostgreSQL (produção)</div>
+          <div class="arch-layer-desc">5 tabelas relacionais · cascade delete · isolamento por user_id em toda query</div>
+        </div>
+      </div>
+
+      <div class="alert alert-info">
+        <span class="alert-icon">💡</span>
+        <div class="alert-body">
+          <strong>Princípio de isolamento</strong>
+          Cada endpoint autenticado filtra dados por <code>current_user.id</code>. Nenhum usuário acessa dados de outro — garantia aplicada no nível da query SQLAlchemy, não apenas na lógica de negócio.
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════
+         2. FUNCIONALIDADES
+    ════════════════════════════════════ -->
+    <section class="section" id="funcionalidades">
+      <div class="section-header">
+        <div class="section-number">2</div>
+        <h2>Funcionalidades do Sistema</h2>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-item">
+          <div class="feature-icon fi-purple">📊</div>
+          <div class="feature-body">
+            <h4>Dashboard Inteligente</h4>
+            <p>KPIs em cards + 4 gráficos (Donut, Bar, Line, Area) dos últimos 6 meses. Top 10 gastos.</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon fi-green">💰</div>
+          <div class="feature-body">
+            <h4>Receitas & Despesas</h4>
+            <p>CRUD completo com filtros por mês, data, categoria. Métodos de pagamento: PIX, Cartão, Boleto...</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon fi-blue">🎯</div>
+          <div class="feature-body">
+            <h4>Metas Financeiras</h4>
+            <p>Progresso em %, prazo, cor customizável. Adicionar valor com cap no target. Badge "Meta atingida!"</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon fi-yellow">📋</div>
+          <div class="feature-body">
+            <h4>Relatórios Comparativos</h4>
+            <p>Diário / semanal / mensal / anual com comparação percentual vs período anterior.</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon fi-red">🤖</div>
+          <div class="feature-body">
+            <h4>Assistente de IA</h4>
+            <p>Chat com 8+ intents de pattern matching. Análise de gastos, economia, investimentos, metas.</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon fi-pink">📡</div>
+          <div class="feature-body">
+            <h4>Radar Financeiro</h4>
+            <p>Score 0–100 com 4 dimensões, alertas automáticos, detecção de desperdícios, previsões.</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon fi-purple">🏷️</div>
+          <div class="feature-body">
+            <h4>Categorias</h4>
+            <p>16 categorias padrão criadas no registro. Customização: emoji, cor hex, tipo (receita/despesa).</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon fi-green">🔐</div>
+          <div class="feature-body">
+            <h4>Autenticação JWT</h4>
+            <p>Registro, login com bcrypt. Token de 7 dias. Auto-logout em 401. Rotas protegidas no layout.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════
+         3. ARQUITETURA EM CAMADAS
+    ════════════════════════════════════ -->
+    <section class="section" id="camadas">
+      <div class="section-header">
+        <div class="section-number">3</div>
+        <h2>Arquitetura em Camadas</h2>
+      </div>
+
+      <p>Separação clara de responsabilidades em três camadas. Frontend e Backend são deployados independentemente.</p>
+
+      <div class="diagram-box">
+        <div class="diagram-header">
+          <span class="diagram-title">Diagrama de Camadas — Mermaid</span>
+          <div class="diagram-dots">
+            <span class="dot-red"></span>
+            <span class="dot-yellow"></span>
+            <span class="dot-green"></span>
+          </div>
+        </div>
+        <div class="diagram-body">
+          <div class="mermaid">
+graph TB
+    subgraph FE["🖥️ FRONTEND — Next.js 14 (porta 3000)"]
+        direction LR
+        P["Pages\n/login /register\n/dashboard/*"]
+        C["Components\nSidebar · Charts · Forms"]
+        L["Libs\napi.ts · auth.ts · utils.ts"]
+        SWR["SWR Cache\n+ localStorage"]
+    end
+
+    subgraph BE["⚙️ BACKEND — FastAPI (porta 8000)"]
+        direction LR
+        RT["Routes (9)\nauth · revenues · expenses\ncategories · goals · dashboard\nreports · ai · radar"]
+        SC["Schemas\nPydantic v2\nValidação + Serialização"]
+        MD["Models\nSQLAlchemy ORM\nUser · Category · Expense\nRevenue · Goal"]
+        SEC["Security\nJWT · bcrypt\nHTTPBearer · deps.py"]
+    end
+
+    subgraph DB["🗄️ DATABASE"]
+        SQ[("SQLite\ndev")]
+        PG[("PostgreSQL\nprod")]
+    end
+
+    FE -->|"HTTP REST\nBearer JWT"| BE
+    BE -->|"SQL ORM"| SQ
+    SQ -.->|"migração"| PG
+
+    style FE fill:#1a1f3e,stroke:#6366f1,color:#c7d2fe
+    style BE fill:#0f2a2a,stroke:#38bdf8,color:#bae6fd
+    style DB fill:#0f2a1a,stroke:#22c55e,color:#bbf7d0
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════
+         4. BANCO DE DADOS
+    ════════════════════════════════════ -->
+    <section class="section" id="banco-de-dados">
+      <div class="section-header">
+        <div class="section-number">4</div>
+        <h2>Modelo de Dados (ERD)</h2>
+      </div>
+
+      <p>Cinco tabelas com relacionamentos definidos via SQLAlchemy ORM. Todos os dados de um usuário são excluídos em cascata ao deletar a conta.</p>
+
+      <!-- ERD Visual Manual -->
+      <div class="erd-grid">
+        <div class="erd-table">
+          <div class="erd-table-header" style="color:#fbbf24">👤 users</div>
+          <div class="erd-field"><span class="erd-field-name pk">id</span><span class="erd-field-type">PK · INTEGER</span></div>
+          <div class="erd-field"><span class="erd-field-name">name</span><span class="erd-field-type">STRING NOT NULL</span></div>
+          <div class="erd-field"><span class="erd-field-name">email</span><span class="erd-field-type">STRING UNIQUE</span></div>
+          <div class="erd-field"><span class="erd-field-name">hashed_password</span><span class="erd-field-type">STRING</span></div>
+          <div class="erd-field"><span class="erd-field-name">created_at</span><span class="erd-field-type">DATETIME</span></div>
+        </div>
+        <div class="erd-table">
+          <div class="erd-table-header" style="color:#818cf8">🏷️ categories</div>
+          <div class="erd-field"><span class="erd-field-name pk">id</span><span class="erd-field-type">PK · INTEGER</span></div>
+          <div class="erd-field"><span class="erd-field-name fk">user_id</span><span class="erd-field-type">FK → users</span></div>
+          <div class="erd-field"><span class="erd-field-name">name</span><span class="erd-field-type">STRING NOT NULL</span></div>
+          <div class="erd-field"><span class="erd-field-name">type</span><span class="erd-field-type">revenue | expense</span></div>
+          <div class="erd-field"><span class="erd-field-name">color</span><span class="erd-field-type">#hexcolor</span></div>
+          <div class="erd-field"><span class="erd-field-name">icon</span><span class="erd-field-type">emoji STRING</span></div>
+        </div>
+        <div class="erd-table">
+          <div class="erd-table-header" style="color:#f87171">💸 expenses</div>
+          <div class="erd-field"><span class="erd-field-name pk">id</span><span class="erd-field-type">PK · INTEGER</span></div>
+          <div class="erd-field"><span class="erd-field-name fk">user_id</span><span class="erd-field-type">FK → users</span></div>
+          <div class="erd-field"><span class="erd-field-name fk">category_id</span><span class="erd-field-type">FK → categories?</span></div>
+          <div class="erd-field"><span class="erd-field-name">description</span><span class="erd-field-type">STRING NOT NULL</span></div>
+          <div class="erd-field"><span class="erd-field-name">amount</span><span class="erd-field-type">FLOAT NOT NULL</span></div>
+          <div class="erd-field"><span class="erd-field-name">date</span><span class="erd-field-type">DATE NOT NULL</span></div>
+          <div class="erd-field"><span class="erd-field-name">payment_method</span><span class="erd-field-type">PIX | Cartão | ...</span></div>
+          <div class="erd-field"><span class="erd-field-name">observation</span><span class="erd-field-type">TEXT NULL</span></div>
+        </div>
+        <div class="erd-table">
+          <div class="erd-table-header" style="color:#4ade80">💵 revenues</div>
+          <div class="erd-field"><span class="erd-field-name pk">id</span><span class="erd-field-type">PK · INTEGER</span></div>
+          <div class="erd-field"><span class="erd-field-name fk">user_id</span><span class="erd-field-type">FK → users</span></div>
+          <div class="erd-field"><span class="erd-field-name fk">category_id</span><span class="erd-field-type">FK → categories?</span></div>
+          <div class="erd-field"><span class="erd-field-name">description</span><span class="erd-field-type">STRING NOT NULL</span></div>
+          <div class="erd-field"><span class="erd-field-name">amount</span><span class="erd-field-type">FLOAT NOT NULL</span></div>
+          <div class="erd-field"><span class="erd-field-name">date</span><span class="erd-field-type">DATE NOT NULL</span></div>
+          <div class="erd-field"><span class="erd-field-name">observation</span><span class="erd-field-type">TEXT NULL</span></div>
+        </div>
+        <div class="erd-table">
+          <div class="erd-table-header" style="color:#7dd3fc">🎯 goals</div>
+          <div class="erd-field"><span class="erd-field-name pk">id</span><span class="erd-field-type">PK · INTEGER</span></div>
+          <div class="erd-field"><span class="erd-field-name fk">user_id</span><span class="erd-field-type">FK → users</span></div>
+          <div class="erd-field"><span class="erd-field-name">name</span><span class="erd-field-type">STRING NOT NULL</span></div>
+          <div class="erd-field"><span class="erd-field-name">target_amount</span><span class="erd-field-type">FLOAT NOT NULL</span></div>
+          <div class="erd-field"><span class="erd-field-name">current_amount</span><span class="erd-field-type">FLOAT DEFAULT 0</span></div>
+          <div class="erd-field"><span class="erd-field-name">deadline</span><span class="erd-field-type">DATE NULL</span></div>
+          <div class="erd-field"><span class="erd-field-name">color</span><span class="erd-field-type">#hexcolor</span></div>
+        </div>
+      </div>
+
+      <div class="alert alert-warning">
+        <span class="alert-icon">⚠️</span>
+        <div class="alert-body">
+          <strong>Relacionamentos com cascade</strong>
+          <code>User → Categories / Expenses / Revenues / Goals</code> usam <code>cascade="all, delete-orphan"</code>. Ao deletar um usuário, todos os seus dados são removidos automaticamente pelo ORM sem necessidade de DELETE manual.
+        </div>
+      </div>
+
+      <div class="diagram-box">
+        <div class="diagram-header">
+          <span class="diagram-title">ERD Mermaid</span>
+          <div class="diagram-dots">
+            <span class="dot-red"></span><span class="dot-yellow"></span><span class="dot-green"></span>
+          </div>
+        </div>
+        <div class="diagram-body">
+          <div class="mermaid">
+erDiagram
+    USERS {
+        int id PK
+        string name
+        string email UK
+        string hashed_password
+        datetime created_at
+    }
+    CATEGORIES {
+        int id PK
+        int user_id FK
+        string name
+        string type
+        string color
+        string icon
+        datetime created_at
+    }
+    EXPENSES {
+        int id PK
+        int user_id FK
+        int category_id FK
+        string description
+        float amount
+        date date
+        string payment_method
+        text observation
+        datetime created_at
+    }
+    REVENUES {
+        int id PK
+        int user_id FK
+        int category_id FK
+        string description
+        float amount
+        date date
+        text observation
+        datetime created_at
+    }
+    GOALS {
+        int id PK
+        int user_id FK
+        string name
+        float target_amount
+        float current_amount
+        date deadline
+        string color
+        datetime created_at
+    }
+
+    USERS ||--o{ CATEGORIES : "possui (cascade)"
+    USERS ||--o{ EXPENSES : "lança (cascade)"
+    USERS ||--o{ REVENUES : "lança (cascade)"
+    USERS ||--o{ GOALS : "define (cascade)"
+    CATEGORIES ||--o{ EXPENSES : "classifica"
+    CATEGORIES ||--o{ REVENUES : "classifica"
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════
+         5. FRONTEND
+    ════════════════════════════════════ -->
+    <section class="section" id="frontend">
+      <div class="section-header">
+        <div class="section-number">5</div>
+        <h2>Componentes Frontend</h2>
+      </div>
+
+      <p>Next.js 14 com App Router. Rotas públicas (login/register) e área protegida (dashboard) com layout separado que verifica autenticação antes de renderizar.</p>
+
+      <div class="diagram-box">
+        <div class="diagram-header">
+          <span class="diagram-title">Estrutura de Páginas e Componentes</span>
+          <div class="diagram-dots">
+            <span class="dot-red"></span><span class="dot-yellow"></span><span class="dot-green"></span>
+          </div>
+        </div>
+        <div class="diagram-body">
+          <div class="mermaid">
+graph TD
+    ROOT["app/layout.tsx\nRoot — dark mode global"]
+
+    ROOT --> PUBLIC["Rotas Públicas"]
+    ROOT --> GUARD["dashboard/layout.tsx\n🔐 Verifica isAuthenticated()\nSidebar + Header"]
+
+    PUBLIC --> LG["login/page.tsx\nForm: email + senha\nZod validation\nPOST /auth/login"]
+    PUBLIC --> RG["register/page.tsx\nForm: nome + email + senha\nZod validation\nPOST /auth/register"]
+
+    GUARD --> SB["Sidebar.tsx\nMenu navegação\nDesktop fixed\nMobile overlay\nBotão Logout"]
+    GUARD --> HD["Header.tsx\nTítulo dinâmico\nAvatar iniciais"]
+
+    GUARD --> D0["dashboard/page.tsx\nSummaryCards x5\nDonutChart\nBarChart\nLineChart\nAreaChart\nTopExpenses"]
+
+    GUARD --> D1["expenses/page.tsx\nFiltro mês\nTabela CRUD\nExpenseForm"]
+    GUARD --> D2["revenues/page.tsx\nFiltro mês\nTabela CRUD\nRevenueForm"]
+    GUARD --> D3["categories/page.tsx\nTabs: Despesas / Receitas\nGrid de cards"]
+    GUARD --> D4["goals/page.tsx\nGrid de metas\nBarra progresso %\nModal add-amount"]
+    GUARD --> D5["radar/page.tsx\nScore circular SVG\nAlertas coloridos\nPrevisões"]
+    GUARD --> D6["ai-assistant/page.tsx\nInterface chat\n8 sugestões\nPOST /ai/chat"]
+    GUARD --> D7["reports/page.tsx\nSeletor período\nComparativos %\nTabelas"]
+
+    style ROOT fill:#1a1f3e,stroke:#6366f1,color:#c7d2fe
+    style GUARD fill:#1a1f3e,stroke:#6366f1,color:#c7d2fe
+    style D0 fill:#0f2020,stroke:#38bdf8,color:#bae6fd
+          </div>
+        </div>
+      </div>
+
+      <h3>Gerenciamento de Estado</h3>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Camada</th><th>Tecnologia</th><th>Dados Gerenciados</th><th>Escopo</th></tr></thead>
+          <tbody>
+            <tr><td>Autenticação</td><td><code>localStorage</code></td><td><code>evf_auth_token</code>, <code>evf_user</code></td><td>Persiste entre sessões</td></tr>
+            <tr><td>Server data</td><td><code>SWR</code></td><td>Receitas, despesas, dashboard, radar...</td><td>Cache com revalidação on-focus</td></tr>
+            <tr><td>UI local</td><td><code>React.useState</code></td><td>Modais, filtros, formulários abertos</td><td>Componente</td></tr>
+            <tr><td>Formulários</td><td><code>react-hook-form + Zod</code></td><td>Campos, erros, submit state</td><td>Componente de form</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════
+         6. API ENDPOINTS
+    ════════════════════════════════════ -->
+    <section class="section" id="api">
+      <div class="section-header">
+        <div class="section-number">6</div>
+        <h2>Mapa de Endpoints da API</h2>
+      </div>
+
+      <p>FastAPI gera documentação OpenAPI automaticamente em <code>http://localhost:8000/docs</code>. Todos os endpoints (exceto <code>/auth/register</code> e <code>/auth/login</code>) exigem <strong>Bearer Token JWT</strong>.</p>
+
+      <h3>Auth</h3>
+      <div class="endpoint-list">
+        <div class="endpoint-item">
+          <span class="method post">POST</span>
+          <span class="endpoint-path">/auth/register</span>
+          <span class="endpoint-desc">Cria conta + 16 categorias padrão → 201 Token + User</span>
+        </div>
+        <div class="endpoint-item">
+          <span class="method post">POST</span>
+          <span class="endpoint-path">/auth/login</span>
+          <span class="endpoint-desc">Autentica email/senha → 200 Token + User</span>
+        </div>
+        <div class="endpoint-item">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/auth/me</span>
+          <span class="endpoint-desc">Dados do usuário autenticado → UserOut</span>
+        </div>
+      </div>
+
+      <h3>Categorias</h3>
+      <div class="endpoint-list">
+        <div class="endpoint-item">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/categories?type=expense|revenue</span>
+          <span class="endpoint-desc">Lista categorias do usuário filtradas por tipo</span>
+        </div>
+        <div class="endpoint-item">
+          <span class="method post">POST</span>
+          <span class="endpoint-path">/categories</span>
+          <span class="endpoint-desc">Cria nova categoria → 201 CategoryOut</span>
+        </div>
+        <div class="endpoint-item">
+          <span class="method put">PUT</span>
+          <span class="endpoint-path">/categories/{id}</span>
+          <span class="endpoint-desc">Atualiza nome, cor ou ícone</span>
+        </div>
+        <div class="endpoint-item">
+          <span class="method delete">DELETE</span>
+          <span class="endpoint-path">/categories/{id}</span>
+          <span class="endpoint-desc">Remove categoria → 204 No Content</span>
+        </div>
+      </div>
+
+      <h3>Despesas</h3>
+      <div class="endpoint-list">
+        <div class="endpoint-item">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/expenses?month=2024-06&amp;category_id=5</span>
+          <span class="endpoint-desc">Lista com filtros: mês, intervalo de datas, categoria</span>
+        </div>
+        <div class="endpoint-item">
+          <span class="method post">POST</span>
+          <span class="endpoint-path">/expenses</span>
+          <span class="endpoint-desc">Cria despesa → 201 ExpenseOut (com eager load da categoria)</span>
+        </div>
+        <div class="endpoint-item">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/expenses/{id}</span>
+          <span class="endpoint-desc">Detalhe de uma despesa</span>
+        </div>
+        <div class="endpoint-item">
+          <span class="method put">PUT</span>
+          <span class="endpoint-path">/expenses/{id}</span>
+          <span class="endpoint-desc">Atualização parcial (campos opcionais)</span>
+        </div>
+        <div class="endpoint-item">
+          <span class="method delete">DELETE</span>
+          <span class="endpoint-path">/expenses/{id}</span>
+          <span class="endpoint-desc">Remove → 204 No Content</span>
+        </div>
+      </div>
+
+      <h3>Receitas</h3>
+      <div class="endpoint-list">
+        <div class="endpoint-item">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/revenues?month=2024-06</span>
+          <span class="endpoint-desc">Lista receitas com filtros equivalentes ao de despesas</span>
+        </div>
+        <div class="endpoint-item">
+          <span class="method post">POST</span>
+          <span class="endpoint-path">/revenues</span>
+          <span class="endpoint-desc">Cria receita → 201 RevenueOut</span>
+        </div>
+        <div class="endpoint-item">
+          <span class="method put">PUT</span>
+          <span class="endpoint-path">/revenues/{id}</span>
+          <span class="endpoint-desc">Atualização parcial</span>
+        </div>
+        <div class="endpoint-item">
+          <span class="method delete">DELETE</span>
+          <span class="endpoint-path">/revenues/{id}</span>
+          <span class="endpoint-desc">Remove → 204 No Content</span>
+        </div>
+      </div>
+
+      <h3>Metas</h3>
+      <div class="endpoint-list">
+        <div class="endpoint-item">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/goals</span>
+          <span class="endpoint-desc">Lista metas com campo calculado <code>percentage</code></span>
+        </div>
+        <div class="endpoint-item">
+          <span class="method post">POST</span>
+          <span class="endpoint-path">/goals</span>
+          <span class="endpoint-desc">Cria meta → 201 GoalOut</span>
+        </div>
+        <div class="endpoint-item">
+          <span class="method put">PUT</span>
+          <span class="endpoint-path">/goals/{id}/add-amount</span>
+          <span class="endpoint-desc">Adiciona valor à meta — não ultrapassa target_amount</span>
+        </div>
+        <div class="endpoint-item">
+          <span class="method delete">DELETE</span>
+          <span class="endpoint-path">/goals/{id}</span>
+          <span class="endpoint-desc">Remove meta → 204 No Content</span>
+        </div>
+      </div>
+
+      <h3>Dashboard & Análise</h3>
+      <div class="endpoint-list">
+        <div class="endpoint-item">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/dashboard/summary?month=2024-06</span>
+          <span class="endpoint-desc">KPIs: saldo, receitas, despesas, lucro, top_expenses, expense_categories</span>
+        </div>
+        <div class="endpoint-item">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/dashboard/charts</span>
+          <span class="endpoint-desc">4 datasets dos últimos 6 meses para os gráficos</span>
+        </div>
+        <div class="endpoint-item">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/reports/summary?period=monthly&amp;reference_date=2024-06-01</span>
+          <span class="endpoint-desc">Relatório comparativo com período anterior + lista de transações</span>
+        </div>
+        <div class="endpoint-item">
+          <span class="method post">POST</span>
+          <span class="endpoint-path">/ai/chat</span>
+          <span class="endpoint-desc">Chat com análise de padrões financeiros → response Markdown</span>
+        </div>
+        <div class="endpoint-item">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/radar/analysis</span>
+          <span class="endpoint-desc">Score 0–100, alertas, detecção de desperdícios, previsões</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════
+         7. FLUXO DE AUTENTICAÇÃO
+    ════════════════════════════════════ -->
+    <section class="section" id="autenticacao">
+      <div class="section-header">
+        <div class="section-number">7</div>
+        <h2>Fluxo de Autenticação</h2>
+      </div>
+
+      <div class="diagram-box">
+        <div class="diagram-header">
+          <span class="diagram-title">Sequência — Registro, Login, Request, Token Expirado</span>
+          <div class="diagram-dots">
+            <span class="dot-red"></span><span class="dot-yellow"></span><span class="dot-green"></span>
+          </div>
+        </div>
+        <div class="diagram-body">
+          <div class="mermaid">
+sequenceDiagram
+    actor U as Usuário
+    participant FE as Frontend
+    participant LS as localStorage
+    participant BE as FastAPI
+    participant DB as Banco de Dados
+
+    rect rgb(20,40,70)
+        Note over U,DB: REGISTRO
+        U->>FE: nome + email + senha
+        FE->>FE: Valida com Zod
+        FE->>BE: POST /auth/register
+        BE->>DB: SELECT email (verifica duplicata)
+        DB-->>BE: vazio
+        BE->>DB: INSERT users (bcrypt hash)
+        BE->>DB: INSERT 16 categorias padrão
+        BE-->>FE: 201 {access_token, user}
+        FE->>LS: setToken() + setUser()
+        FE->>FE: router.push('/dashboard')
+    end
+
+    rect rgb(20,50,30)
+        Note over U,DB: LOGIN
+        U->>FE: email + senha
+        FE->>BE: POST /auth/login
+        BE->>DB: SELECT user WHERE email=?
+        BE->>BE: bcrypt.checkpw()
+        BE-->>FE: 200 {access_token, user}
+        FE->>LS: setToken() + setUser()
+    end
+
+    rect rgb(40,25,25)
+        Note over U,DB: TOKEN EXPIRADO
+        FE->>BE: GET /expenses Bearer expired
+        BE->>BE: jwt.decode → JWTError
+        BE-->>FE: 401 Unauthorized
+        FE->>LS: removeToken() + removeUser()
+        FE->>FE: redirect /login
+    end
+          </div>
+        </div>
+      </div>
+
+      <h3>Detalhes de Segurança</h3>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Aspecto</th><th>Implementação</th><th>Detalhe</th></tr></thead>
+          <tbody>
+            <tr><td>Hash de senha</td><td><code>bcrypt 4.x</code></td><td>Salt automático, resistente a rainbow tables</td></tr>
+            <tr><td>JWT Algorithm</td><td><code>HS256</code></td><td>HMAC-SHA256 com <code>SECRET_KEY</code> de .env</td></tr>
+            <tr><td>Token TTL</td><td>10080 minutos</td><td>7 dias — configurável via <code>ACCESS_TOKEN_EXPIRE_MINUTES</code></td></tr>
+            <tr><td>Auth header</td><td><code>HTTPBearer</code></td><td>FastAPI dependency injection em todos os endpoints protegidos</td></tr>
+            <tr><td>Isolamento</td><td><code>WHERE user_id = ?</code></td><td>Toda query filtra pelo <code>current_user.id</code> injetado</td></tr>
+            <tr><td>CORS</td><td>Middleware FastAPI</td><td>Permite apenas <code>localhost:3000</code> em desenvolvimento</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════
+         8. FLUXO DE TRANSAÇÃO
+    ════════════════════════════════════ -->
+    <section class="section" id="transacao">
+      <div class="section-header">
+        <div class="section-number">8</div>
+        <h2>Fluxo de uma Transação (CRUD)</h2>
+      </div>
+
+      <p>Ciclo completo de uma operação de despesa desde o preenchimento do formulário até o rerender da tabela via SWR.</p>
+
+      <!-- Visual de steps -->
+      <div class="seq-visual">
+        <div class="seq-step">
+          <div class="seq-step-line">
+            <div class="seq-dot" style="background:#6366f1;color:#fff">1</div>
+            <div class="seq-connector"></div>
+          </div>
+          <div class="seq-content">
+            <h4>Usuário preenche ExpenseForm</h4>
+            <p>Campos: descrição, categoria, valor, data, método de pagamento, observação (opcional)</p>
+          </div>
+        </div>
+        <div class="seq-step">
+          <div class="seq-step-line">
+            <div class="seq-dot" style="background:#6366f1;color:#fff">2</div>
+            <div class="seq-connector"></div>
+          </div>
+          <div class="seq-content">
+            <h4>Validação Zod (client-side)</h4>
+            <p>Campos obrigatórios, amount positivo, date válida. Erros exibidos inline antes de enviar.</p>
+          </div>
+        </div>
+        <div class="seq-step">
+          <div class="seq-step-line">
+            <div class="seq-dot" style="background:#38bdf8;color:#0f2030">3</div>
+            <div class="seq-connector"></div>
+          </div>
+          <div class="seq-content">
+            <h4>POST /expenses com Bearer Token</h4>
+            <p>lib/api.ts injeta o token do localStorage no header <code>Authorization: Bearer ...</code></p>
+          </div>
+        </div>
+        <div class="seq-step">
+          <div class="seq-step-line">
+            <div class="seq-dot" style="background:#38bdf8;color:#0f2030">4</div>
+            <div class="seq-connector"></div>
+          </div>
+          <div class="seq-content">
+            <h4>Backend valida e persiste</h4>
+            <p>HTTPBearer autentica → Pydantic valida body → SQLAlchemy INSERT → db.refresh() → eager load category</p>
+          </div>
+        </div>
+        <div class="seq-step">
+          <div class="seq-step-line">
+            <div class="seq-dot" style="background:#22c55e;color:#fff">5</div>
+            <div class="seq-connector"></div>
+          </div>
+          <div class="seq-content">
+            <h4>201 ExpenseOut retornado</h4>
+            <p>Inclui <code>id</code>, <code>created_at</code> e objeto <code>category</code> aninhado (joinedload).</p>
+          </div>
+        </div>
+        <div class="seq-step">
+          <div class="seq-step-line">
+            <div class="seq-dot" style="background:#22c55e;color:#fff">6</div>
+          </div>
+          <div class="seq-content">
+            <h4>SWR mutate → rerender automático</h4>
+            <p>Frontend invalida o cache <code>/expenses?month=...</code>, SWR refetch e a tabela atualiza sem reload.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="diagram-box">
+        <div class="diagram-header">
+          <span class="diagram-title">Diagrama de Sequência — Criação de Despesa</span>
+          <div class="diagram-dots">
+            <span class="dot-red"></span><span class="dot-yellow"></span><span class="dot-green"></span>
+          </div>
+        </div>
+        <div class="diagram-body">
+          <div class="mermaid">
+sequenceDiagram
+    participant Form as ExpenseForm
+    participant API as lib/api.ts
+    participant SWR as SWR Cache
+    participant BE as FastAPI
+    participant ORM as SQLAlchemy
+    participant DB as SQLite
+
+    Form->>Form: Validação Zod
+    Form->>API: api.post('/expenses', data)
+    API->>BE: POST /expenses + Bearer Token
+    BE->>BE: get_current_user() → User
+    BE->>BE: ExpenseCreate.model_validate(body)
+    BE->>ORM: Expense(**data, user_id=user.id)
+    ORM->>DB: INSERT INTO expenses
+    DB-->>ORM: id = 42
+    ORM->>DB: SELECT expenses JOIN categories WHERE id=42
+    DB-->>ORM: Expense + Category
+    BE-->>API: 201 ExpenseOut
+    API-->>Form: ExpenseOut
+    Form->>SWR: mutate('/expenses?month=...')
+    SWR->>BE: GET /expenses?month=2024-06
+    BE-->>SWR: List atualizada
+    SWR-->>Form: Rerender tabela
+    Form->>Form: Fecha modal
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════
+         9. RADAR FINANCEIRO
+    ════════════════════════════════════ -->
+    <section class="section" id="radar">
+      <div class="section-header">
+        <div class="section-number">9</div>
+        <h2>Radar Financeiro — Score 0–100</h2>
+      </div>
+
+      <p>O Radar calcula automaticamente a saúde financeira do usuário ao chamar <code>GET /radar/analysis</code>. O score é composto por 4 dimensões e gera alertas, previsões e detecção de desperdícios.</p>
+
+      <h3>Dimensões do Score</h3>
+
+      <div class="score-grid">
+        <div class="score-card">
+          <div class="score-range" style="color:#6366f1">0–40 pts</div>
+          <div class="score-label" style="color:#818cf8">Expense Ratio</div>
+          <div style="font-size:12px;color:var(--muted)">(1 − despesas/receitas) × 40</div>
+          <div class="score-bar" style="background:rgba(99,102,241,.3)"></div>
+        </div>
+        <div class="score-card">
+          <div class="score-range" style="color:#22c55e">0–20 pts</div>
+          <div class="score-label" style="color:#4ade80">Goal Tracking</div>
+          <div style="font-size:12px;color:var(--muted)">+20 se tem metas cadastradas</div>
+          <div class="score-bar" style="background:rgba(34,197,94,.3)"></div>
+        </div>
+        <div class="score-card">
+          <div class="score-range" style="color:#38bdf8">0–20 pts</div>
+          <div class="score-label" style="color:#7dd3fc">Revenue Sources</div>
+          <div style="font-size:12px;color:var(--muted)">5 pts por categoria de receita diferente</div>
+          <div class="score-bar" style="background:rgba(56,189,248,.3)"></div>
+        </div>
+        <div class="score-card">
+          <div class="score-range" style="color:#f59e0b">0–20 pts</div>
+          <div class="score-label" style="color:#fbbf24">Expense Stability</div>
+          <div style="font-size:12px;color:var(--muted)">Estabilidade vs mês anterior</div>
+          <div class="score-bar" style="background:rgba(245,158,11,.3)"></div>
+        </div>
+      </div>
+
+      <h3>Faixas de Score</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Score</th><th>Label</th><th>Cor</th><th>Significado</th></tr></thead>
+          <tbody>
+            <tr><td>91–100</td><td><strong style="color:#4ade80">Excelente</strong></td><td><span style="color:#22c55e">●</span> #22c55e</td><td>Finanças sob controle total, alta poupança</td></tr>
+            <tr><td>76–90</td><td><strong style="color:#a3e635">Muito Bom</strong></td><td><span style="color:#84cc16">●</span> #84cc16</td><td>Bom equilíbrio, pequenas melhorias possíveis</td></tr>
+            <tr><td>61–75</td><td><strong style="color:#fbbf24">Regular</strong></td><td><span style="color:#f59e0b">●</span> #f59e0b</td><td>Atenção necessária em algumas áreas</td></tr>
+            <tr><td>41–60</td><td><strong style="color:#fb923c">Atenção</strong></td><td><span style="color:#f97316">●</span> #f97316</td><td>Risco de desequilíbrio financeiro</td></tr>
+            <tr><td>0–40</td><td><strong style="color:#f87171">Crítico</strong></td><td><span style="color:#ef4444">●</span> #ef4444</td><td>Despesas superam ou se igualam às receitas</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="diagram-box">
+        <div class="diagram-header">
+          <span class="diagram-title">Fluxo do Motor do Radar</span>
+          <div class="diagram-dots">
+            <span class="dot-red"></span><span class="dot-yellow"></span><span class="dot-green"></span>
+          </div>
+        </div>
+        <div class="diagram-body">
+          <div class="mermaid">
+flowchart TD
+    START([GET /radar/analysis]) --> FETCH[Buscar dados\ndo mês atual e anterior]
+    FETCH --> S1[Expense Ratio\n0-40 pts]
+    FETCH --> S2[Goal Tracking\n0-20 pts]
+    FETCH --> S3[Revenue Sources\n0-20 pts]
+    FETCH --> S4[Expense Stability\n0-20 pts]
+    S1 & S2 & S3 & S4 --> TOTAL[Score Total 0-100\n+ Label + Cor]
+    TOTAL --> AL{Gerar Alertas}
+    AL --> A1[Categoria > 35%?\n⚠️ warning]
+    AL --> A2[Despesas > Receitas?\n🔴 danger]
+    AL --> A3[Aumento > 30% vs mês?\n📈 anomalia]
+    AL --> A4[Sem receitas?\n⛔ danger]
+    AL --> A5[Tudo OK?\n✅ success]
+    TOTAL --> WD{Detecção de\nDesperdícios}
+    WD --> W1[Assinaturas > R$200?\nSugestão de revisão]
+    WD --> W2[Alimentação > 30%?\nSugestão de redução]
+    TOTAL --> PR[Previsões\nnext_month_balance\nsavings_potential]
+    A1 & A2 & A3 & A4 & A5 & W1 & W2 & PR --> RESP([RadarAnalysis JSON])
+
+    style START fill:#1a1a2e,stroke:#6366f1,color:#c7d2fe
+    style RESP fill:#0f2a1a,stroke:#22c55e,color:#bbf7d0
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════
+         10. ASSISTENTE IA
+    ════════════════════════════════════ -->
+    <section class="section" id="ia">
+      <div class="section-header">
+        <div class="section-number">10</div>
+        <h2>Assistente de IA — Pattern Matching</h2>
+      </div>
+
+      <p>O assistente analisa a mensagem do usuário via <strong>pattern matching em texto</strong>, busca os dados financeiros do mês no banco e retorna uma resposta formatada em Markdown com valores em BRL.</p>
+
+      <div class="diagram-box">
+        <div class="diagram-header">
+          <span class="diagram-title">Intents do Chat — Mapeamento de Padrões</span>
+          <div class="diagram-dots">
+            <span class="dot-red"></span><span class="dot-yellow"></span><span class="dot-green"></span>
+          </div>
+        </div>
+        <div class="diagram-body">
+          <div class="mermaid">
+flowchart LR
+    IN["POST /ai/chat\n{message}"] --> LOW[message.lower]
+    LOW --> M{Pattern Match}
+    M -->|"onde.*gastando\nmaior.*gasto"| R1["📊 Top Categorias\n5 maiores, %, flag ⚠️ se > 30%"]
+    M -->|"econom.*\ncortar"| R2["💡 Economizar\nTop 3 cats · reduzir 15%\nEconomia potencial R$"]
+    M -->|"investir\ndisponível"| R3["💰 Potencial Investimento\n30% do lucro\nPerfis: conservador/moderado/arrojado"]
+    M -->|"lucro\nresultado"| R4["📈 Resultado\nReceitas, Despesas, Lucro, Saldo"]
+    M -->|"alimenta\ncomida"| R5["🍽️ Alimentação\nValor · ideal <25%\nStatus vs benchmark"]
+    M -->|"top.*gasto\nmaior.*despesa"| R6["🏆 Top 5 Despesas\nRanking com valores"]
+    M -->|"meta\nobjetivo"| R7["🎯 Status das Metas\nNome · % · dias restantes"]
+    M -->|"receita\nganhei"| R8["💵 Receitas\nTotal · quantidade · média"]
+    M -->|default| R9["📋 Resumo Geral\nKPIs + categoria principal\n+ sugestão"]
+    R1 & R2 & R3 & R4 & R5 & R6 & R7 & R8 & R9 --> FMT[Formatar Markdown + BRL]
+    FMT --> OUT["{response, data}"]
+          </div>
+        </div>
+      </div>
+
+      <h3>8 Sugestões Predefinidas na Interface</h3>
+
+      <div class="cards-grid" style="grid-template-columns: repeat(auto-fill, minmax(240px, 1fr))">
+        <div class="card"><div class="card-icon">📊</div><div class="card-title">Onde estou gastando mais?</div><div class="card-desc">Top categorias com percentual e alertas</div></div>
+        <div class="card"><div class="card-icon">💡</div><div class="card-title">Como posso economizar?</div><div class="card-desc">Sugestão de redução de 15% por categoria</div></div>
+        <div class="card"><div class="card-icon">💰</div><div class="card-title">Quanto posso investir?</div><div class="card-desc">30% do lucro com perfis de investimento</div></div>
+        <div class="card"><div class="card-icon">📈</div><div class="card-title">Qual foi meu lucro?</div><div class="card-desc">Resultado do mês e saldo acumulado</div></div>
+        <div class="card"><div class="card-icon">🍽️</div><div class="card-title">Analise meus gastos com alimentação</div><div class="card-desc">Valor vs benchmark de 25% ideal</div></div>
+        <div class="card"><div class="card-icon">🏆</div><div class="card-title">Top 5 maiores gastos</div><div class="card-desc">Ranking das maiores despesas do mês</div></div>
+        <div class="card"><div class="card-icon">🎯</div><div class="card-title">Como estão minhas metas?</div><div class="card-desc">Status, progresso % e dias restantes</div></div>
+        <div class="card"><div class="card-icon">💵</div><div class="card-title">Analise minhas receitas</div><div class="card-desc">Total, quantidade e média por lançamento</div></div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════
+         11. STACK TECNOLÓGICO
+    ════════════════════════════════════ -->
+    <section class="section" id="stack">
+      <div class="section-header">
+        <div class="section-number">11</div>
+        <h2>Stack Tecnológico</h2>
+      </div>
+
+      <div class="stack-grid">
+        <div class="stack-group">
+          <div class="stack-group-title">🖥️ Frontend</div>
+          <div>
+            <span class="tech-pill"><span class="dot" style="background:#818cf8"></span>Next.js 14.2</span>
+            <span class="tech-pill"><span class="dot" style="background:#38bdf8"></span>React 18</span>
+            <span class="tech-pill"><span class="dot" style="background:#60a5fa"></span>TypeScript 5</span>
+            <span class="tech-pill"><span class="dot" style="background:#2dd4bf"></span>Tailwind CSS 3</span>
+            <span class="tech-pill"><span class="dot" style="background:#f97316"></span>Recharts 2</span>
+            <span class="tech-pill"><span class="dot" style="background:#a78bfa"></span>SWR 2</span>
+            <span class="tech-pill"><span class="dot" style="background:#4ade80"></span>Zod 3</span>
+            <span class="tech-pill"><span class="dot" style="background:#fbbf24"></span>react-hook-form</span>
+            <span class="tech-pill"><span class="dot" style="background:#f472b6"></span>lucide-react</span>
+            <span class="tech-pill"><span class="dot" style="background:#94a3b8"></span>date-fns 4</span>
+            <span class="tech-pill"><span class="dot" style="background:#c084fc"></span>shadcn/ui</span>
+          </div>
+        </div>
+        <div class="stack-group">
+          <div class="stack-group-title">⚙️ Backend</div>
+          <div>
+            <span class="tech-pill"><span class="dot" style="background:#34d399"></span>FastAPI 0.115</span>
+            <span class="tech-pill"><span class="dot" style="background:#fbbf24"></span>Python 3.x</span>
+            <span class="tech-pill"><span class="dot" style="background:#60a5fa"></span>SQLAlchemy 2.0</span>
+            <span class="tech-pill"><span class="dot" style="background:#f87171"></span>Pydantic v2</span>
+            <span class="tech-pill"><span class="dot" style="background:#818cf8"></span>python-jose JWT</span>
+            <span class="tech-pill"><span class="dot" style="background:#a78bfa"></span>bcrypt 4</span>
+            <span class="tech-pill"><span class="dot" style="background:#38bdf8"></span>Uvicorn ASGI</span>
+            <span class="tech-pill"><span class="dot" style="background:#94a3b8"></span>python-dotenv</span>
+          </div>
+        </div>
+        <div class="stack-group">
+          <div class="stack-group-title">🗄️ Dados</div>
+          <div>
+            <span class="tech-pill"><span class="dot" style="background:#4ade80"></span>SQLite 3 (dev)</span>
+            <span class="tech-pill"><span class="dot" style="background:#3b82f6"></span>PostgreSQL (prod)</span>
+          </div>
+          <br>
+          <div class="stack-group-title" style="margin-top:16px">🔐 Auth</div>
+          <div>
+            <span class="tech-pill"><span class="dot" style="background:#f59e0b"></span>JWT HS256</span>
+            <span class="tech-pill"><span class="dot" style="background:#ef4444"></span>bcrypt</span>
+            <span class="tech-pill"><span class="dot" style="background:#6366f1"></span>HTTPBearer</span>
+          </div>
+        </div>
+        <div class="stack-group">
+          <div class="stack-group-title">🚀 Estado HTTP</div>
+          <div>
+            <span class="tech-pill"><span class="dot" style="background:#38bdf8"></span>Fetch API</span>
+            <span class="tech-pill"><span class="dot" style="background:#4ade80"></span>CORS Middleware</span>
+            <span class="tech-pill"><span class="dot" style="background:#a78bfa"></span>SWR cache</span>
+            <span class="tech-pill"><span class="dot" style="background:#fbbf24"></span>localStorage</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-wrap" style="margin-top:24px">
+        <table>
+          <thead><tr><th>Pacote</th><th>Versão</th><th>Papel</th></tr></thead>
+          <tbody>
+            <tr><td><code>next</code></td><td>14.2.18</td><td>Framework React com App Router, SSR, Image, Font</td></tr>
+            <tr><td><code>recharts</code></td><td>^2.13.3</td><td>Gráficos SVG responsivos: Pie, Bar, Line, Area</td></tr>
+            <tr><td><code>swr</code></td><td>^2.2.5</td><td>Data fetching com cache automático e revalidação</td></tr>
+            <tr><td><code>zod</code></td><td>^3.23.8</td><td>Schema validation nos formulários do frontend</td></tr>
+            <tr><td><code>fastapi</code></td><td>0.115.5</td><td>Framework ASGI assíncrono com OpenAPI automático</td></tr>
+            <tr><td><code>sqlalchemy</code></td><td>2.0.36</td><td>ORM com suporte a SQLite e PostgreSQL</td></tr>
+            <tr><td><code>pydantic[email]</code></td><td>2.10.3</td><td>Validação e serialização de request/response bodies</td></tr>
+            <tr><td><code>python-jose</code></td><td>3.3.0</td><td>Encode/decode de JWT tokens com HS256</td></tr>
+            <tr><td><code>bcrypt</code></td><td>4.2.1</td><td>Hash seguro de senhas com salt automático</td></tr>
+            <tr><td><code>uvicorn[standard]</code></td><td>0.32.1</td><td>Servidor ASGI de produção com workers assíncronos</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════
+         12. IMPLANTAÇÃO
+    ════════════════════════════════════ -->
+    <section class="section" id="implantacao">
+      <div class="section-header">
+        <div class="section-number">12</div>
+        <h2>Implantação</h2>
+      </div>
+
+      <h3>Desenvolvimento Local</h3>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">bash — Backend</span></div>
+        <pre>cd backend
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
+# Docs: http://localhost:8000/docs</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">bash — Frontend</span></div>
+        <pre>cd frontend
+npm install
+npm run dev
+# App: http://localhost:3000</pre>
+      </div>
+
+      <h3>Variáveis de Ambiente</h3>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">backend/.env</span></div>
+        <pre>SECRET_KEY=sua-chave-secreta-64-chars-aleatoria
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=10080
+DATABASE_URL=sqlite:///./escritorio.db
+# Produção:
+# DATABASE_URL=postgresql://user:pass@host:5432/escritorio</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">frontend/.env.local</span></div>
+        <pre>NEXT_PUBLIC_API_URL=http://localhost:8000
+# Produção:
+# NEXT_PUBLIC_API_URL=https://api.escritoriovirtual.com.br</pre>
+      </div>
+
+      <h3>Arquitetura de Produção (Sugerida)</h3>
+
+      <div class="diagram-box">
+        <div class="diagram-header">
+          <span class="diagram-title">Deploy Architecture</span>
+          <div class="diagram-dots">
+            <span class="dot-red"></span><span class="dot-yellow"></span><span class="dot-green"></span>
+          </div>
+        </div>
+        <div class="diagram-body">
+          <div class="mermaid">
+graph TB
+    INET["🌐 Internet"] --> CF["☁️ Cloudflare\nDNS + WAF + CDN"]
+    CF --> VRL["▲ Vercel\nFrontend Next.js\nEdge Network · HTTPS"]
+    CF --> NGINX["🔀 Nginx / Railway\nReverse Proxy\nSSL Termination"]
+    NGINX --> API1["⚙️ FastAPI Worker 1\nUvicorn"]
+    NGINX --> API2["⚙️ FastAPI Worker 2\nUvicorn"]
+    API1 & API2 --> PG[("🐘 PostgreSQL\nNeon / Supabase / RDS\nSSL + Backups")]
+    VRL <-->|"HTTP REST + JWT"| NGINX
+
+    style INET fill:#0d1117,stroke:#30363d,color:#8b949e
+    style PG fill:#0f2a1a,stroke:#22c55e,color:#bbf7d0
+    style VRL fill:#1a1a2e,stroke:#6366f1,color:#c7d2fe
+          </div>
+        </div>
+      </div>
+
+      <h3>Checklist de Segurança em Produção</h3>
+
+      <ul class="checklist">
+        <li>
+          <span class="check-icon">🔑</span>
+          <span>Trocar <code>SECRET_KEY</code> por string aleatória de 64+ caracteres — nunca usar o valor padrão de desenvolvimento</span>
+        </li>
+        <li>
+          <span class="check-icon">🐘</span>
+          <span>Migrar <code>DATABASE_URL</code> para PostgreSQL com SSL (<code>?sslmode=require</code>) em produção</span>
+        </li>
+        <li>
+          <span class="check-icon">🌐</span>
+          <span>Atualizar <code>allow_origins</code> no CORS para o domínio real — remover <code>localhost</code></span>
+        </li>
+        <li>
+          <span class="check-icon">🔒</span>
+          <span>HTTPS obrigatório — configurar certificado TLS/SSL (Cloudflare ou Let's Encrypt)</span>
+        </li>
+        <li>
+          <span class="check-icon">🛡️</span>
+          <span>Rate limiting nos endpoints <code>/auth/login</code> e <code>/auth/register</code> para prevenir brute force</span>
+        </li>
+        <li>
+          <span class="check-icon">📦</span>
+          <span>Backup automático diário do banco de dados com retenção de 30 dias</span>
+        </li>
+        <li>
+          <span class="check-icon">📊</span>
+          <span>Monitoramento de erros e performance (Sentry, Datadog ou similar)</span>
+        </li>
+        <li>
+          <span class="check-icon">🔄</span>
+          <span>Variáveis de ambiente nunca no repositório Git — usar secrets do CI/CD (GitHub Actions, Railway)</span>
+        </li>
+      </ul>
+
+      <div class="alert alert-success">
+        <span class="alert-icon">✅</span>
+        <div class="alert-body">
+          <strong>Pronto para produção</strong>
+          O sistema já implementa as práticas essenciais: hash bcrypt, JWT com expiração, isolamento por user_id, validação em duas camadas (Pydantic + Zod) e CORS configurado. Os itens do checklist acima são ajustes de ambiente, não mudanças de código.
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <p style="text-align:center;color:var(--muted);font-size:12px">
+        Escritório Virtual Financeiro — Família Carvalho · Arquitetura v1.0.0 · 2026-06-21<br>
+        Next.js 14 + FastAPI + SQLAlchemy + JWT
+      </p>
+    </section>
+
+  </div><!-- /content -->
+</main>
+
+<script>
+  // Mermaid init
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    themeVariables: {
+      primaryColor: '#6366f1',
+      primaryTextColor: '#e6edf3',
+      primaryBorderColor: '#4f52c9',
+      lineColor: '#8b949e',
+      secondaryColor: '#161b22',
+      tertiaryColor: '#1c2332',
+      background: '#0d1117',
+      mainBkg: '#161b22',
+      nodeBorder: '#30363d',
+      clusterBkg: '#1c2332',
+      titleColor: '#e6edf3',
+      edgeLabelBackground: '#1c2332',
+      actorBkg: '#1c2332',
+      actorBorder: '#6366f1',
+      actorTextColor: '#e6edf3',
+      actorLineColor: '#8b949e',
+      signalColor: '#8b949e',
+      signalTextColor: '#e6edf3',
+      labelBoxBkgColor: '#161b22',
+      labelBoxBorderColor: '#30363d',
+      labelTextColor: '#e6edf3',
+      loopTextColor: '#e6edf3',
+      noteBorderColor: '#f59e0b',
+      noteBkgColor: '#1c2332',
+      noteTextColor: '#e6edf3',
+      activationBorderColor: '#6366f1',
+      activationBkgColor: '#1a1f3e',
+      sequenceNumberColor: '#0d1117',
+      sectionBkgColor: '#1c2332',
+      altSectionBkgColor: '#161b22',
+      sectionBkgColor2: '#161b22',
+      excludeBkgColor: '#1c2332',
+      taskBorderColor: '#6366f1',
+      taskBkgColor: '#1a1f3e',
+      taskTextLightColor: '#e6edf3',
+      taskTextColor: '#e6edf3',
+      taskTextDarkColor: '#0d1117',
+      taskTextOutsideColor: '#e6edf3',
+      taskTextClickableColor: '#818cf8',
+      activeTaskBorderColor: '#818cf8',
+      activeTaskBkgColor: '#4f52c9',
+      gridColor: '#30363d',
+      doneTaskBkgColor: '#22c55e',
+      doneTaskBorderColor: '#16a34a',
+      critBorderColor: '#ef4444',
+      critBkgColor: '#7f1d1d',
+      todayLineColor: '#f59e0b',
+      fillType0: '#1a1f3e',
+      fillType1: '#0f2a2a',
+      fillType2: '#0f2a1a',
+      fillType3: '#2a1a0f',
+      fillType4: '#2a0f1a',
+      fillType5: '#1a2a0f',
+      fillType6: '#1a0f2a',
+      fillType7: '#2a1a0f',
+    },
+    flowchart: { curve: 'basis', htmlLabels: true },
+    sequence: { mirrorActors: false, bottomMarginAdj: 0, useMaxWidth: true },
+    er: { useMaxWidth: true },
+  });
+
+  // Scroll function
+  function scrollTo(id) {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    // Update active nav link
+    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+  }
+
+  // Intersection observer for active nav
+  const sections = document.querySelectorAll('.section');
+  const navLinks = document.querySelectorAll('.nav-link');
+
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = entry.target.id;
+        navLinks.forEach(l => l.classList.remove('active'));
+        const map = {
+          'visao-geral':     0,
+          'funcionalidades': 1,
+          'camadas':         2,
+          'banco-de-dados':  3,
+          'frontend':        4,
+          'api':             5,
+          'autenticacao':    6,
+          'transacao':       7,
+          'radar':           8,
+          'ia':              9,
+          'stack':           10,
+          'implantacao':     11,
+        };
+        const idx = map[id];
+        if (idx !== undefined && navLinks[idx]) {
+          navLinks[idx].classList.add('active');
+        }
+      }
+    });
+  }, { threshold: 0.15 });
+
+  sections.forEach(s => obs.observe(s));
+</script>
+</body>
+</html>
