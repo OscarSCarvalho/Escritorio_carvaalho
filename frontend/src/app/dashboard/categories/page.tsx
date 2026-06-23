@@ -54,7 +54,7 @@ export default function CategoriesPage() {
               }`}>
               {t === 'expense' ? '💸 Despesas' : (
                 <span className="inline-flex items-center gap-2">
-                  <img src="/carvalho-logo.svg" alt="Carvalho" className="w-5 h-5 object-contain" />
+                  <img src="/carvalho-logo.png" alt="Carvalho" className="w-5 h-5 object-contain" />
                   Receitas
                 </span>
               )}

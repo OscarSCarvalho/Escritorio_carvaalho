@@ -73,7 +73,7 @@ export default function RevenuesPage() {
           </div>
         ) : !revenues?.length ? (
           <div className="flex flex-col items-center justify-center py-16 text-text-secondary">
-            <img src="/carvalho-logo.svg" alt="Carvalho" className="w-20 h-20 mb-3 object-contain" />
+            <img src="/carvalho-logo.png" alt="Carvalho" className="w-20 h-20 mb-3 object-contain" />
             <p className="font-medium">Nenhuma receita registrada</p>
             <p className="text-sm mt-1">Clique em "Nova Receita" para começar</p>
           </div>

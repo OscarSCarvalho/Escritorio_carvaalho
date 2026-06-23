@@ -47,7 +47,7 @@ export default function RegisterPage() {
       <div className="absolute inset-0 bg-gradient-to-br from-secondary/20 via-bg-dark to-primary/10 pointer-events-none" />
       <div className="w-full max-w-md animate-fade-in relative z-10">
         <div className="text-center mb-8">
-          <img src="/carvalho-logo.svg" alt="Carvalho" className="mx-auto mb-3 w-20 h-20 object-contain" />
+          <img src="/carvalho-logo.png" alt="Carvalho" className="mx-auto mb-3 w-20 h-20 object-contain" />
           <h1 className="text-2xl font-bold text-text-primary">Escritório Virtual</h1>
           <p className="text-text-secondary mt-1">Família Carvalho</p>
         </div>

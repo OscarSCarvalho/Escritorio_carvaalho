@@ -36,7 +36,7 @@ export default function Sidebar() {
       <div className="p-6 border-b border-border-dark">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
-            <img src="/carvalho-logo.svg" alt="Carvalho" className="w-8 h-8 object-contain" />
+            <img src="/carvalho-logo.png" alt="Carvalho" className="w-8 h-8 object-contain" />
           </div>
           <div>
             <p className="text-text-primary font-bold text-sm leading-tight">Escritório Virtual</p>
