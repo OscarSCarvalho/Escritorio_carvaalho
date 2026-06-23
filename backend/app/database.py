@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import NullPool
 import os
 from dotenv import load_dotenv
 
@@ -8,18 +9,18 @@ load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./escritorio.db")
 
-# Supabase/Railway fornece URLs com prefixo "postgres://" — SQLAlchemy exige "postgresql://"
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
 is_sqlite = "sqlite" in DATABASE_URL
+is_serverless = os.getenv("VERCEL") is not None
 
-engine = create_engine(
-    DATABASE_URL,
-    connect_args={"check_same_thread": False} if is_sqlite else {},
-    pool_pre_ping=True,
-    **({"pool_size": 5, "max_overflow": 10} if not is_sqlite else {}),
-)
+if is_sqlite:
+    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+elif is_serverless:
+    engine = create_engine(DATABASE_URL, poolclass=NullPool)
+else:
+    engine = create_engine(DATABASE_URL, pool_pre_ping=True, pool_size=5, max_overflow=10)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
